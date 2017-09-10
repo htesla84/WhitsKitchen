@@ -1,50 +1,77 @@
+
 buildscript {
     repositories {
         jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+      }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
 }
+
+// plugins{
+//   look into   http://imperceptiblethoughts.com/shadow/
+// }
+
+
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-apply plugin: 'java'
-apply plugin: 'application'
 
-version = "1.11a"
-group= "thegreyghost" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "minecraftbyexample"
+version = "${mc_version}-${mod_version}"
+group= "${package_group}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "${mod_name}"
 
-sourceCompatibility = targetCompatibility = "1.6" // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = "1.6"
-}
 
 minecraft {
-    version = "1.11-13.19.1.2189"
+    version = "${mc_version}-${forge_version}"
     runDir = "run"
 
-    // the mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   snapshot are built nightly.
-    // stable_#            stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not allways work.
-    // simply re-run your setup task after changing the mappings to update your workspace.
-    mappings = "snapshot_20161111"
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    if (project.hasProperty('mappings_version'))
+        mappings = project.mappings_version
+}
+
+// repositories {
+//     maven stuff
+// }
+
+dependencies {
+    // deobfProvided "mezz.jei:jei_${mc_version}:${jei_version}:api"
+    // runtime "mezz.jei:jei_${mc_version}:${jei_version}"
+    // compile "org.apache.httpcomponents:fluent-hc:${httpclient_version}"
+    // deobfProvided "mcp.mobius.waila:Hwyla:${hwyla_version}_1.12"
+    // deobfCompile "com.github.azanor:Baubles:${baubles_version}"
+
+    // for more info...
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
 }
 
 
-mainClassName = 'HelloWorld'
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
 
-//create a single Jar with all dependencies
-task fatJar(type: Jar) {
-	manifest {
-        attributes 'Implementation-Title': 'Gradle Jar File Example',
-        	'Implementation-Version': version,
-        	'Main-Class': mainClassName
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
     }
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
+
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
 }
+
+// compileJava {
+//     sourceCompatibility = targetCompatibility = "1.6" // Need this here so eclipse task generates correctly.
+//     sourceCompatibility = targetCompatibility = "1.6"
+// }
